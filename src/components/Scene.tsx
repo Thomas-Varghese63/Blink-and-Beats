@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
-import * as THREE from 'three';
+//import * as THREE from "three";
 import Avatar from './Avatar';
 
 interface SceneProps {
@@ -56,10 +56,10 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
       <Environment preset="night" />
       
       {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <meshPhongMaterial 
-          color="#111133" 
+          color="#ececffff" 
           shininess={200} 
           transparent 
           opacity={0.9} 
@@ -70,16 +70,16 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
       <mesh position={[0, -2.75, 0]} receiveShadow>
         <cylinderGeometry args={[8, 8, 0.5, 32]} />
         <meshPhongMaterial 
-          color="#222244" 
+          color="#bcbcd1ff" 
           transparent 
           opacity={0.8} 
-          emissive="#000022"
+          emissive="#c3c3dbff"
         />
       </mesh>
 
       {/* Contact shadows */}
       <ContactShadows 
-        position={[0, -2.5, 0]} 
+        position={[0, -5, 0]} 
         opacity={0.4} 
         scale={10} 
         blur={2} 
