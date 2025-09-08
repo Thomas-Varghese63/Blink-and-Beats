@@ -56,12 +56,12 @@ useEffect(() => {
     const level = typeof levelState === "number" ? levelState : levelState?.current ?? 1;
     if (mixer) {
       // Speed up the animation when musicIntensity is higher
-      mixer.update(delta * (0.5 + musicIntensity * 2));
+      mixer.update(delta );
     }
     if (actions) {
       // Also scale the underlying action playback (timeScale)
       Object.values(actions).forEach((a: any) => {
-        a.timeScale = 0.6 + musicIntensity * 2.2; // tweak to taste
+        a.timeScale = 1; // tweak to taste
       });
     }
     // small bob using audio mid

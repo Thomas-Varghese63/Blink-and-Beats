@@ -22,17 +22,17 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 8, 20], fov: 75 }}
+      camera={{ position: [0, 2, 4], fov: 75 }}
       style={{ background: 'radial-gradient(circle at center, #001122 0%, #000000 100%)' }}
     >
       {/* Lighting */}
-      <ambientLight intensity={0.2} color="#222244" />
+      <ambientLight intensity={0.2} color="#7ae289" />
       <spotLight
         position={[0, 15, 15]}
         angle={Math.PI / 4}
         penumbra={0.3}
         intensity={3}
-        color="#00FFFF"
+        color="#181f1fff"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -42,7 +42,7 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
         angle={Math.PI / 5}
         penumbra={0.4}
         intensity={2.5}
-        color="#FF1493"
+        color="#784962ff"
       />
       <spotLight
         position={[15, 12, 8]}
@@ -57,9 +57,9 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
       
       {/* Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
+        <planeGeometry args={[50, 200]} />
         <meshPhongMaterial 
-          color="#ececffff" 
+          color="#fbfafa" 
           shininess={200} 
           transparent 
           opacity={0.9} 
@@ -67,19 +67,19 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
       </mesh>
 
       {/* Stage platform */}
-      <mesh position={[0, -2.75, 0]} receiveShadow>
-        <cylinderGeometry args={[8, 8, 0.5, 32]} />
+      <mesh position={[0, -2.75, -8]} receiveShadow>
+        <cylinderGeometry args={[8, 8, 0.2, 64]} />
         <meshPhongMaterial 
-          color="#bcbcd1ff" 
+          color="#000000" 
           transparent 
-          opacity={0.8} 
-          emissive="#c3c3dbff"
+          opacity={0.9} 
+          emissive="#0d243a"
         />
       </mesh>
 
       {/* Contact shadows */}
       <ContactShadows 
-        position={[0, -5, 0]} 
+        position={[0, 0, 0]} 
         opacity={0.4} 
         scale={10} 
         blur={2} 

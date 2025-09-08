@@ -389,7 +389,7 @@ const BeatBlinkApp: React.FC = () => {
           <div className="flex items-center justify-center">
             <div className="flex items-center space-x-4">
               <Music className="w-10 h-10 text-cyan-400 animate-pulse" />
-              <h1 className="text-4xl md:text-7xl font-black bg-gradient-to-r from-cyan-400 via-pink-400 to-green-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-6xl font-black bg-gradient-to-r from-cyan-400 via-pink-400 to-green-400 bg-clip-text text-transparent">
                 BEAT & BLINK
               </h1>
               {levelState.isWinner && (
@@ -442,7 +442,7 @@ const BeatBlinkApp: React.FC = () => {
         </div>
 
         {/* Music Level Panel */}
-        <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-xl border-2 border-white/20 rounded-2xl p-6 w-80 pointer-events-auto shadow-2xl">
+        <div className="absolute top-6 right-6 bg-black/40 backdrop-blur-xl border-2 border-white/20 rounded-2xl p-3 w-75 pointer-events-auto shadow-2xl">
           <h3 className="text-white font-bold text-lg mb-6 flex items-center">
             <Activity className="w-6 h-6 mr-3 text-pink-400" />
             Music Intensity Meters
