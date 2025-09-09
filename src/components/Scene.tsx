@@ -1,8 +1,9 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { Sparkles,OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 //import * as THREE from "three";
 import Avatar from './Avatar';
+import PaperFlares from './Paperflares';
 
 interface SceneProps {
   musicIntensity: number;
@@ -19,10 +20,11 @@ interface SceneProps {
 }
 
 const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) => {
+  
   return (
     <Canvas
       shadows
-      camera={{ position: [0, 2, 4], fov: 75 }}
+      camera={{ position: [0, 0.5, 3], fov: 75 }}
       style={{ background: 'radial-gradient(circle at center, #001122 0%, #000000 100%)' }}
     >
       {/* Lighting */}
@@ -32,7 +34,7 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
         angle={Math.PI / 4}
         penumbra={0.3}
         intensity={3}
-        color="#181f1fff"
+        color="#181f1f"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -42,21 +44,21 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
         angle={Math.PI / 5}
         penumbra={0.4}
         intensity={2.5}
-        color="#784962ff"
+        color="#784962"
       />
       <spotLight
         position={[15, 12, 8]}
         angle={Math.PI / 5}
         penumbra={0.4}
         intensity={2.5}
-        color="#32CD32"
+        color="#cd3232"
       />
 
       {/* Environment */}
       <Environment preset="night" />
       
       {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 2]} receiveShadow>
         <planeGeometry args={[50, 200]} />
         <meshPhongMaterial 
           color="#fbfafa" 
@@ -67,19 +69,19 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
       </mesh>
 
       {/* Stage platform */}
-      <mesh position={[0, -2.75, -8]} receiveShadow>
-        <cylinderGeometry args={[8, 8, 0.2, 64]} />
+      <mesh position={[0, -2.75, -10.5]} receiveShadow>
+        <cylinderGeometry args={[9.5, 8, 0.2, 64]} />
         <meshPhongMaterial 
-          color="#000000" 
+          color="#111010" 
           transparent 
           opacity={0.9} 
-          emissive="#0d243a"
+          emissive="#021c3b"
         />
       </mesh>
 
       {/* Contact shadows */}
       <ContactShadows 
-        position={[0, 0, 0]} 
+        position={[0, -5, 5]} 
         opacity={0.4} 
         scale={10} 
         blur={2} 
@@ -94,6 +96,37 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
           audioData={audioData}
         />
       </Suspense>
+      
+
+      {/* Party effects when music intensity is high */}
+      {musicIntensity >= 3 && (
+        <>
+          {/* Sparkles effect */}
+          <Sparkles
+            count={50}
+            scale={5}
+            size={3}
+            color="hotpink"
+            speed={0.5}
+            position={[0, 1, 0]}
+          />
+          
+          {/* Paper flares effect */}
+          <PaperFlares
+            musicIntensity={musicIntensity}
+            levelState={levelState}
+            audioData={audioData}
+          />
+          
+          {/* Additional ambient light for paper flares */}
+          <pointLight
+            position={[0, 8, 0]}
+            intensity={2 + musicIntensity * 2}
+            distance={20}
+            color="#ff3366"
+          />
+        </>
+      )}
 
       {/* Controls for development (remove in production) */}
       <OrbitControls 
@@ -103,7 +136,10 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
         minPolarAngle={Math.PI / 4}
       />
     </Canvas>
+
+    
   );
+
 };
 
 export default Scene;
