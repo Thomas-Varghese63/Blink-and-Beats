@@ -1,0 +1,83 @@
+/* Base styles for frequency bars */
+.frequency-bar {
+  width: 0.5rem;
+  border-top-left-radius: 0.125rem;
+  border-top-right-radius: 0.125rem;
+  transition: all 0.15s ease-out;
+  transform: scaleY(0.1);
+  height: var(--bar-height);
+  background: var(--bar-gradient);
+  box-shadow: var(--bar-shadow);
+}
+
+.frequency-bar.playing {
+  transform: scaleY(1);
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Level progress bars */
+.level-bar {
+  width: var(--level-width);
+  height: 0.75rem;
+  border-radius: 9999px;
+  transition: all 0.3s;
+  background-color: var(--level-color);
+  box-shadow: var(--level-shadow);
+}
+
+.level-bar.complete {
+  width: 100%;
+  opacity: 1;
+}
+
+.level-bar.current {
+  opacity: 1;
+}
+
+.level-bar.upcoming {
+  width: 0;
+  opacity: 0.5;
+}
+
+/* Audio intensity bars */
+.intensity-bar {
+  height: 100%;
+  border-radius: 9999px;
+  transition: all 0.15s;
+  width: var(--intensity-width);
+  background: var(--intensity-gradient);
+  box-shadow: var(--intensity-shadow);
+}
+
+.volume-bar {
+  height: 0.75rem;
+  border-radius: 9999px;
+  transition: all 0.15s;
+  width: var(--volume-width);
+  background: var(--volume-gradient);
+  box-shadow: var(--volume-shadow);
+}
+
+/* Background effects */
+.background-effect {
+  position: absolute;
+  inset: 0;
+  transition: opacity 1s;
+  background: var(--effect-gradient);
+  opacity: var(--effect-opacity);
+}
+
+.background-effect.level-3 {
+  opacity: 0.2;
+  --effect-gradient: radial-gradient(circle at var(--center-x) var(--center-y), rgba(0,255,255,0.4) 0%, transparent 60%);
+}
+
+.background-effect.level-4 {
+  opacity: 0.15;
+  --effect-gradient: radial-gradient(circle at var(--center-x) var(--center-y), rgba(255,20,147,0.3) 0%, transparent 50%);
+}
+
+.background-effect.winner {
+  background: linear-gradient(to right, rgba(250,204,21,0.3), rgba(236,72,153,0.3), rgba(6,182,212,0.3));
+  animation: pulse 2s infinite;
+}

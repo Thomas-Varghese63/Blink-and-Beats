@@ -1,9 +1,9 @@
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Sparkles,OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 //import * as THREE from "three";
 import Avatar from './Avatar';
-import PaperFlares from './Paperflares';
+//import PaperFlares from './Paperflares';
 
 interface SceneProps {
   musicIntensity: number;
@@ -33,7 +33,7 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
         position={[0, 15, 15]}
         angle={Math.PI / 4}
         penumbra={0.3}
-        intensity={3}
+        intensity={15}
         color="#181f1f"
         castShadow
         shadow-mapSize-width={2048}
@@ -43,14 +43,14 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
         position={[-15, 12, 8]}
         angle={Math.PI / 5}
         penumbra={0.4}
-        intensity={2.5}
+        intensity={15}
         color="#784962"
       />
       <spotLight
         position={[15, 12, 8]}
         angle={Math.PI / 5}
         penumbra={0.4}
-        intensity={2.5}
+        intensity={15}
         color="#cd3232"
       />
 
@@ -98,35 +98,7 @@ const Scene: React.FC<SceneProps> = ({ musicIntensity, levelState, audioData }) 
       </Suspense>
       
 
-      {/* Party effects when music intensity is high */}
-      {musicIntensity >= 3 && (
-        <>
-          {/* Sparkles effect */}
-          <Sparkles
-            count={50}
-            scale={5}
-            size={3}
-            color="hotpink"
-            speed={0.5}
-            position={[0, 1, 0]}
-          />
-          
-          {/* Paper flares effect */}
-          <PaperFlares
-            musicIntensity={musicIntensity}
-            levelState={levelState}
-            audioData={audioData}
-          />
-          
-          {/* Additional ambient light for paper flares */}
-          <pointLight
-            position={[0, 8, 0]}
-            intensity={2 + musicIntensity * 2}
-            distance={20}
-            color="#ff3366"
-          />
-        </>
-      )}
+       
 
       {/* Controls for development (remove in production) */}
       <OrbitControls 
