@@ -3,35 +3,68 @@
 import React, { useState } from 'react';
 import { Music, Volume2, Wifi, Activity, Play, Pause, Trophy, Zap } from 'lucide-react';
 import Scene from './components/Scene';
-import { useWebSocket } from './hooks/useWebSocket';
 import type { CustomCSSProperties } from './components/CustomCSS';
 import './components/FrequencyBars.css';
 
 const BeatBlinkApp: React.FC = () => {
-  // Use the WebSocket hook to get data from the server
-  const { audioData, levelState, isConnected, connectionError, sendMessage } = useWebSocket();
-  
-  // Local state to manage UI-only elements, like a "playing" indicator
+  // Local state to manage UI-only elements
   const [isPlaying, setIsPlaying] = useState(false);
   const [iotConnected, setIotConnected] = useState(false);
-
-  // Use a fallback state for when data isn't yet available from the WebSocket
-  const currentAudioData = audioData || { volume: 0, bass: 0, mid: 0, treble: 0, frequencies: new Array(32).fill(0), overallIntensity: 0 };
-  const currentLevelState = levelState || { current: 1, progress: 0, isWinner: false, winnerStartTime: null };
+  const [audioData, setAudioData] = useState({
+    volume: 0,
+    bass: 0,
+    mid: 0,
+    treble: 0,
+    frequencies: new Array(32).fill(0),
+    overallIntensity: 0
+  });
+  const [levelState, setLevelState] = useState({
+    current: 1,
+    progress: 0,
+    isWinner: false,
+    winnerStartTime: null as number | null
+  });
+  // Add these new state variables with the existing ones
+  const [esp32Response, setEsp32Response] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const toggleAudio = () => {
     const newPlayingState = !isPlaying;
     setIsPlaying(newPlayingState);
-    // Send control message to the backend
-    sendMessage({ type: 'control', data: { play: newPlayingState }});
   };
 
-  const connectIoT = () => {
-    setIotConnected(!iotConnected);
-    // Similarly, send a message to the backend
-    // sendMessage({ type: 'iot_control', data: { connect: !iotConnected }});
+  const connectIoT = async () => {
+  try {
+    const res = await fetch("http://localhost:4000/api/status"); // backend endpoint
+    if (res.ok) {
+      setIotConnected(true);
+    } else {
+      setIotConnected(false);
+    }
+  } catch (err) {
+    console.error("ESP32 not reachable:", err);
+    setIotConnected(false);
+  }
+};
+
+  // Add this new function with your existing functions
+  const sendRelayCommand = async (level: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:4000/api/relay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ level }),
+      });
+      const data = await res.json();
+      setEsp32Response(data);
+    } catch (err: any) {
+      setEsp32Response({ status: "error", message: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
   // Level indicator, frequency bars, etc., remain the same but now use currentAudioData and currentLevelState
   // ... (rest of the component code is the same)
   const LevelIndicator = () => {
@@ -41,13 +74,13 @@ const BeatBlinkApp: React.FC = () => {
     };
     
     const getLevelStyle = (level: number): CustomCSSProperties => {
-      const isCurrentLevel = level === currentLevelState.current;
-      const isPastLevel = level < currentLevelState.current;
+      const isCurrentLevel = level === levelState.current;
+      const isPastLevel = level < levelState.current;
       const color = getLevelColor(level);
       
       return {
         '--level-width': isCurrentLevel 
-          ? `${currentLevelState.progress * 100}%` 
+          ? `${levelState.progress * 100}%` 
           : isPastLevel ? '100%' : '0%',
         '--level-color': color,
         '--level-shadow': isCurrentLevel ? `0 0 10px ${color}` : 'none'
@@ -55,15 +88,15 @@ const BeatBlinkApp: React.FC = () => {
     };
 
     const intensityStyle: CustomCSSProperties = {
-      '--intensity-width': `${currentAudioData.overallIntensity * 100}%`,
+      '--intensity-width': `${audioData.overallIntensity * 100}%`,
       '--intensity-gradient': 'linear-gradient(to right, #06b6d4, #ec4899, #facc15)',
-      '--intensity-shadow': `0 0 15px rgba(0, 255, 255, ${currentAudioData.overallIntensity})`
+      '--intensity-shadow': `0 0 15px rgba(0, 255, 255, ${audioData.overallIntensity})`
     };
     
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-white font-bold text-lg">Level {currentLevelState.current}</span>
+          <span className="text-white font-bold text-lg">Level {levelState.current}</span>
         </div>
         
         {/* Level progress bars */}
@@ -74,9 +107,9 @@ const BeatBlinkApp: React.FC = () => {
               <div className="flex-1 bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className={`level-bar ${
-                    level < currentLevelState.current 
+                    level < levelState.current 
                       ? 'opacity-100' 
-                      : level === currentLevelState.current 
+                      : level === levelState.current 
                         ? 'opacity-100' 
                         : 'opacity-50'
                   }`}
@@ -84,7 +117,7 @@ const BeatBlinkApp: React.FC = () => {
                 />
               </div>
               {level === 5 && (
-                <Trophy className={`w-4 h-4 ${currentLevelState.current === 5 ? 'text-yellow-400 animate-pulse' : 'text-gray-600'}`} />
+                <Trophy className={`w-4 h-4 ${levelState.current === 5 ? 'text-yellow-400 animate-pulse' : 'text-gray-600'}`} />
               )}
             </div>
           ))}
@@ -94,7 +127,7 @@ const BeatBlinkApp: React.FC = () => {
         <div className="mt-4 p-3 bg-black/30 rounded-lg border border-white/10">
           <div className="flex items-center justify-between mb-2">
             <span className="text-cyan-300 text-sm">Overall Intensity</span>
-            <span className="text-white text-sm">{Math.round(currentAudioData.overallIntensity * 100)}%</span>
+            <span className="text-white text-sm">{Math.round(audioData.overallIntensity * 100)}%</span>
           </div>
           <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
             <div className="intensity-bar" style={intensityStyle} />
@@ -109,8 +142,8 @@ const BeatBlinkApp: React.FC = () => {
     // Create a style object with proper typing
     const getBarStyle = (freq: number, index: number): CustomCSSProperties => {
       const height = Math.max((freq / 255) * 100, 2); // Ensure minimum height
-      const levelBoost = isPlaying ? (1 + currentLevelState.current * 0.1) : 1;
-      const hue = (index / currentAudioData.frequencies.length) * 360; // Color gradient based on index
+      const levelBoost = isPlaying ? (1 + levelState.current * 0.1) : 1;
+      const hue = (index / audioData.frequencies.length) * 360; // Color gradient based on index
       
       return {
         '--bar-height': `${Math.max(height * levelBoost, 8)}%`,
@@ -124,7 +157,7 @@ const BeatBlinkApp: React.FC = () => {
 
     return (
       <div className="flex items-end space-x-1 h-20">
-        {currentAudioData.frequencies.map((freq, i) => (
+        {audioData.frequencies.map((freq, i) => (
           <div
             key={i}
             className={`frequency-bar ${isPlaying ? 'playing' : ''}`}
@@ -140,42 +173,42 @@ const BeatBlinkApp: React.FC = () => {
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm">
         <span className="text-cyan-300">Volume</span>
-        <span className="text-white font-mono">{Math.round(currentAudioData.volume * 100)}%</span>
+        <span className="text-white font-mono">{Math.round(audioData.volume * 100)}%</span>
       </div>
       <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
         <div 
           className="bg-gradient-to-r from-cyan-500 to-pink-500 h-3 rounded-full transition-all duration-150"
           style={{ 
-            width: `${currentAudioData.volume * 100}%`,
-            boxShadow: `0 0 10px rgba(0, 255, 255, ${currentAudioData.volume})`
+            width: `${audioData.volume * 100}%`,
+            boxShadow: `0 0 10px rgba(0, 255, 255, ${audioData.volume})`
           }}
         />
       </div>
       
       <div className="flex items-center justify-between text-sm">
         <span className="text-pink-300">Bass</span>
-        <span className="text-white font-mono">{Math.round(currentAudioData.bass * 100)}%</span>
+        <span className="text-white font-mono">{Math.round(audioData.bass * 100)}%</span>
       </div>
       <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
         <div 
           className="bg-gradient-to-r from-pink-500 to-purple-500 h-3 rounded-full transition-all duration-150"
           style={{ 
-            width: `${currentAudioData.bass * 100}%`,
-            boxShadow: `0 0 10px rgba(255, 20, 147, ${currentAudioData.bass})`
+            width: `${audioData.bass * 100}%`,
+            boxShadow: `0 0 10px rgba(255, 20, 147, ${audioData.bass})`
           }}
         />
       </div>
 
       <div className="flex items-center justify-between text-sm">
         <span className="text-green-300">Treble</span>
-        <span className="text-white font-mono">{Math.round(currentAudioData.treble * 100)}%</span>
+        <span className="text-white font-mono">{Math.round(audioData.treble * 100)}%</span>
       </div>
       <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
         <div 
           className="bg-gradient-to-r from-green-500 to-yellow-500 h-3 rounded-full transition-all duration-150"
           style={{ 
-            width: `${currentAudioData.treble * 100}%`,
-            boxShadow: `0 0 10px rgba(50, 205, 50, ${currentAudioData.treble})`
+            width: `${audioData.treble * 100}%`,
+            boxShadow: `0 0 10px rgba(50, 205, 50, ${audioData.treble})`
           }}
         />
       </div>
@@ -187,14 +220,14 @@ const BeatBlinkApp: React.FC = () => {
       {/* React Three Fiber Scene */}
       <div className="absolute inset-0 w-full h-full">
         <Scene 
-          musicIntensity={currentAudioData.overallIntensity}
-          levelState={currentLevelState}
-          audioData={currentAudioData}
+          musicIntensity={audioData.overallIntensity}
+          levelState={levelState}
+          audioData={audioData}
         />
       </div>
       
       {/* Winner State Overlay */}
-      {currentLevelState.isWinner && (
+      {levelState.isWinner && (
         <div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-center">
           <div className="text-center animate-pulse">
             <div className="text-8xl md:text-9xl font-black text-transparent bg-gradient-to-r from-yellow-400 via-pink-500 to-cyan-400 bg-clip-text animate-bounce">
@@ -218,7 +251,7 @@ const BeatBlinkApp: React.FC = () => {
               <h1 className="text-3xl md:text-6xl font-black bg-gradient-to-r from-cyan-400 via-pink-400 to-green-400 bg-clip-text text-transparent">
                 BEAT & BLINK
               </h1>
-              {currentLevelState.isWinner && (
+              {levelState.isWinner && (
                 <Trophy className="w-12 h-12 text-yellow-400 animate-bounce" />
               )}
             </div>
@@ -250,9 +283,9 @@ const BeatBlinkApp: React.FC = () => {
         {/* Level System Panel */}
         <div className="absolute top-6 left-6 bg-black/40 backdrop-blur-xl border-2 border-white/20 rounded-2xl p-6 w-80 pointer-events-auto shadow-2xl">
           <div className="flex items-center space-x-3 mb-6">
-            <Zap className={`w-6 h-6 ${currentLevelState.current >= 3 ? 'text-yellow-400 animate-pulse' : 'text-cyan-400'}`} />
+            <Zap className={`w-6 h-6 ${levelState.current >= 3 ? 'text-yellow-400 animate-pulse' : 'text-cyan-400'}`} />
             <span className="text-white font-bold text-lg">Energy Level System</span>
-            {currentLevelState.isWinner && <Trophy className="w-6 h-6 text-yellow-400 animate-bounce" />}
+            {levelState.isWinner && <Trophy className="w-6 h-6 text-yellow-400 animate-bounce" />}
           </div>
           <LevelIndicator />
         </div>
@@ -262,7 +295,7 @@ const BeatBlinkApp: React.FC = () => {
           <div className="flex items-center space-x-3 mb-4">
             <Volume2 className="w-6 h-6 text-cyan-400" />
             <span className="text-white font-bold">Live Audio Visualizer</span>
-            <Activity className={`w-5 h-5 ${isConnected ? 'text-green-400 animate-pulse' : 'text-gray-400'}`} />
+            <Activity className={`w-5 h-5 ${iotConnected ? 'text-green-400 animate-pulse' : 'text-gray-400'}`} />
           </div>
           <FrequencyBars />
         </div>
@@ -276,13 +309,56 @@ const BeatBlinkApp: React.FC = () => {
           <MusicLevelIndicator />
         </div>
 
+        {/* Relay Controls Panel */}
+        <div className="absolute bottom-32 right-6 bg-black/40 backdrop-blur-xl border-2 border-white/20 rounded-2xl p-6 pointer-events-auto shadow-2xl">
+          <div className="flex flex-col space-y-4">
+            <h3 className="text-white font-bold text-lg flex items-center">
+              <Zap className="w-6 h-6 mr-3 text-yellow-400" />
+              Relay Controls
+            </h3>
+            
+            <div className="flex space-x-2">
+              {[1, 2, 3, 4].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => sendRelayCommand(level)}
+                  className="px-4 py-2 bg-cyan-500/20 border-2 border-cyan-400 text-cyan-400 rounded-xl hover:bg-cyan-500/30 transition-all transform hover:scale-105"
+                >
+                  Relay {level}
+                </button>
+              ))}
+              <button
+                onClick={() => sendRelayCommand(0)}
+                className="px-4 py-2 bg-pink-500/20 border-2 border-pink-400 text-pink-400 rounded-xl hover:bg-pink-500/30 transition-all transform hover:scale-105"
+              >
+                All Off
+              </button>
+            </div>
+
+            {loading && (
+              <div className="text-cyan-400 text-sm animate-pulse">
+                Sending command...
+              </div>
+            )}
+
+            {esp32Response && (
+              <div className="text-sm">
+                <div className="text-gray-400">ESP32 Response:</div>
+                <pre className="text-cyan-300 text-xs mt-1 bg-black/50 p-2 rounded">
+                  {JSON.stringify(esp32Response, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Bottom Status Bar */}
         <div className="absolute bottom-6 left-6 right-6 bg-black/30 backdrop-blur-xl border-2 border-white/20 rounded-2xl p-6 pointer-events-auto shadow-2xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-3">
-                <div className={`w-4 h-4 rounded-full ${isConnected ? 'bg-green-400 animate-pulse shadow-lg shadow-green-400/50' : 'bg-gray-400'}`} />
-                <span className="text-white font-medium">{isConnected ? 'Server Connected' : 'Server Disconnected'}</span>
+                <div className={`w-4 h-4 rounded-full ${iotConnected ? 'bg-green-400 animate-pulse shadow-lg shadow-green-400/50' : 'bg-gray-400'}`} />
+                <span className="text-white font-medium">{iotConnected ? 'Server Connected' : 'Server Disconnected'}</span>
               </div>
               
               <div className="flex items-center space-x-3">
@@ -291,9 +367,9 @@ const BeatBlinkApp: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-3">
-                <Zap className={`w-5 h-5 ${currentLevelState.current >= 4 ? 'text-yellow-400 animate-pulse' : 'text-cyan-400'}`} />
-                <span className="text-white font-medium">Level {currentLevelState.current}/5</span>
-                {currentLevelState.isWinner && (
+                <Zap className={`w-5 h-5 ${levelState.current >= 4 ? 'text-yellow-400 animate-pulse' : 'text-cyan-400'}`} />
+                <span className="text-white font-medium">Level {levelState.current}/5</span>
+                {levelState.isWinner && (
                   <span className="text-yellow-400 font-bold animate-pulse">WINNER STATE!</span>
                 )}
               </div>
@@ -306,23 +382,24 @@ const BeatBlinkApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Info (only shown when not playing) */}
-        {!isConnected && (
+        {/* Center Info (only shown when not connected) 
+        {!iotConnected && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-auto z-40">
             <div className="bg-black/60 backdrop-blur-xl border-2 border-white/30 rounded-3xl p-10 text-center max-w-lg shadow-2xl">
               <h2 className="text-3xl font-bold text-white mb-6">Connecting to Beat & Blink Server...</h2>
               <div className="text-gray-300 mb-8 text-lg leading-relaxed">
                 <span>Please wait while we establish a connection to the real-time data stream.</span>
-                {connectionError && <div className="text-red-400 mt-4">{connectionError}</div>}
               </div>
             </div>
           </div>
         )}
+          */}
       </div>
+      
 
       {/* Dynamic background effects based on level */}
       <div className="absolute inset-0 pointer-events-none">
-        {currentLevelState.current >= 3 && (
+        {levelState.current >= 3 && (
           <div 
             className="background-effect level-3"
             style={{
@@ -331,7 +408,7 @@ const BeatBlinkApp: React.FC = () => {
             } as CustomCSSProperties}
           />
         )}
-        {currentLevelState.current >= 4 && (
+        {levelState.current >= 4 && (
           <div 
             className="background-effect level-4"
             style={{
@@ -340,7 +417,7 @@ const BeatBlinkApp: React.FC = () => {
             } as CustomCSSProperties}
           />
         )}
-        {currentLevelState.isWinner && (
+        {levelState.isWinner && (
           <div className="background-effect winner" />
         )}
       </div>
