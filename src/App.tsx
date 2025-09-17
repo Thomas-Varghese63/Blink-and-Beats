@@ -5,6 +5,7 @@ import { Music, Volume2, Wifi, Activity, Play, Pause, Trophy, Zap } from 'lucide
 import Scene from './components/Scene';
 import type { CustomCSSProperties } from './components/CustomCSS';
 import './components/FrequencyBars.css';
+import { ESP32Monitor } from './components/ESP32Monitor';
 
 const BeatBlinkApp: React.FC = () => {
   // Local state to manage UI-only elements
@@ -366,14 +367,7 @@ const BeatBlinkApp: React.FC = () => {
               </div>
             )}
 
-            {esp32Response && (
-              <div className="text-sm">
-                <div className="text-gray-400">ESP32 Response:</div>
-                <pre className="text-cyan-300 text-xs mt-1 bg-black/50 p-2 rounded">
-                  {JSON.stringify(esp32Response, null, 2)}
-                </pre>
-              </div>
-            )}
+            
           </div>
         </div>
 
@@ -445,6 +439,11 @@ const BeatBlinkApp: React.FC = () => {
         {levelState.isWinner && (
           <div className="background-effect winner" />
         )}
+      </div>
+
+      {/* Add ESP32 Monitor */}
+      <div className="absolute top-24 right-6 pointer-events-auto">
+        <ESP32Monitor />
       </div>
     </div>
   );
