@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Music, Volume2, Wifi, Activity, Play, Pause, Trophy, Zap } from 'lucide-react';
 import Scene from './components/Scene';
 import type { CustomCSSProperties } from './components/CustomCSS';
@@ -28,10 +28,35 @@ const BeatBlinkApp: React.FC = () => {
   const [esp32Response, setEsp32Response] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  // Replace the existing toggleAudio function
   const toggleAudio = () => {
-    const newPlayingState = !isPlaying;
-    setIsPlaying(newPlayingState);
+    setIsPlaying((prev) => !prev);
   };
+
+  // Add this new effect after your state declarations
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const interval = setInterval(() => {
+      setAudioData({
+        volume: Math.random(),
+        bass: Math.random(),
+        mid: Math.random(),
+        treble: Math.random(),
+        frequencies: new Array(32).fill(0).map(() => Math.random() * 255),
+        overallIntensity: Math.random(),
+      });
+
+      setLevelState((prev) => ({
+        ...prev,
+        current: Math.floor(Math.random() * 4) + 1, // Changed to 4 levels
+        progress: Math.random(),
+        isWinner: Math.random() > 0.95, // ~5% chance of winner animation
+      }));
+    }, 150);
+
+    return () => clearInterval(interval);
+  }, [isPlaying]);
 
   const connectIoT = async () => {
   try {
